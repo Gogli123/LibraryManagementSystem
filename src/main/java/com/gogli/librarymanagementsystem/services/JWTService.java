@@ -1,40 +1,36 @@
 package com.gogli.librarymanagementsystem.services;
 
+import com.gogli.librarymanagementsystem.repo.TokenRepo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JWTService {
 
+    private final TokenRepo tokenRepo;
+    
     @Value("${jwt.secret.key}")
     private String secretKey;
 
     @Value("${jwt.token.validity}")
     private long jwtTokenValidity;
 
-    public JWTService() {
-
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGen.generateKey();
-            secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+    private SecretKey getSigningKey() {
+        byte[] byteKey = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(byteKey);
     }
 
     public String generateToken(String username) {
@@ -46,13 +42,8 @@ public class JWTService {
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtTokenValidity))
                 .and()
-                .signWith(getKey())
+                .signWith(getSigningKey())
                 .compact();
-    }
-
-    private SecretKey getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractUserName(String token) {
@@ -67,7 +58,7 @@ public class JWTService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getKey())
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -75,7 +66,9 @@ public class JWTService {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String userName = extractUserName(token);
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        boolean isTokenValid = tokenRepo.findByToken(token).map(t -> !t.isRevoked() && !t.isExpired())
+                .orElse(false);
+        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token)) && isTokenValid;
     }
 
     private boolean isTokenExpired(String token) {

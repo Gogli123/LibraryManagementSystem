@@ -4,19 +4,20 @@ import com.gogli.librarymanagementsystem.exceptions.ResourceNotFoundException;
 import com.gogli.librarymanagementsystem.models.MembershipStatus;
 import com.gogli.librarymanagementsystem.models.Patron;
 import com.gogli.librarymanagementsystem.repo.PatronRepo;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 @Service
+@RequiredArgsConstructor
 public class PatronService {
 
     private final PatronRepo repo;
-
-    public PatronService(PatronRepo repo) {
-        this.repo = repo;
-    }
-
+    
     public List<Patron> getAllPatrons() {
         return repo.findAll();
     }
@@ -37,45 +38,55 @@ public class PatronService {
         repo.save(patron);
         return patron;
     }
-    
-    public void updatePatron(long patronId, Patron updatedPatron){
+
+    @Transactional
+    public void updatePatron(long patronId, Patron updatedPatron) {
+        Patron existingPatron = getPatronById(patronId);
+        
+        updateIfPresent(updatedPatron.getFirstName(), existingPatron::setFirstName);
+        updateIfPresent(updatedPatron.getLastName(), existingPatron::setLastName);
+        updateIfPresent(updatedPatron.getEmailAddress(), existingPatron::setEmailAddress);
+        updateIfPresent(updatedPatron.getPhoneNumber(), existingPatron::setPhoneNumber);
+        updateIfPresent(updatedPatron.getMembershipStatus(), existingPatron::setMembershipStatus);
+
+        repo.save(existingPatron);
+    }
+
+    private <T> void updateIfPresent(T value, Consumer<T> setter) {
+        Optional.ofNullable(value).ifPresent(setter);
+    }
+
+    public void setPatronSuspended(long patronId) {
         Patron patron = getPatronById(patronId);
-        
-        patron.setFirstName(updatedPatron.getFirstName());
-        patron.setLastName(updatedPatron.getLastName());
-        patron.setEmailAddress(updatedPatron.getEmailAddress());
-        patron.setPhoneNumber(updatedPatron.getPhoneNumber());
-        patron.setMembershipStatus(updatedPatron.getMembershipStatus());
-        
+        patron.setMembershipStatus(MembershipStatus.SUSPENDED);
         repo.save(patron);
     }
-    
-    public void setPatronInactive(long patronId){
+
+    public void setPatronExpired(long patronId) {
         Patron patron = getPatronById(patronId);
-        patron.setActive(false);
+        patron.setMembershipStatus(MembershipStatus.EXPIRED);
         repo.save(patron);
     }
 
     public void reactivatePatron(long patronId) {
         Patron patron = getPatronById(patronId);
-        if (patron.isActive()) {
+        if (patron.getMembershipStatus() == MembershipStatus.ACTIVE) {
             throw new IllegalArgumentException("Patron is already active");
         }
-        patron.setActive(true);
+        patron.setMembershipStatus(MembershipStatus.ACTIVE);
         repo.save(patron);
     }
 
-    public void validatePatronStatus(long patronId) {
+    public MembershipStatus validatePatronStatus(long patronId) {
         Patron patron = getPatronById(patronId);
-        
-        if (!patron.isActive()) {
-            throw new IllegalStateException("Patron is not active");
+
+        if (patron.getMembershipStatus() == MembershipStatus.ACTIVE) {
+            return MembershipStatus.ACTIVE;
         }
         if (patron.getMembershipStatus() == MembershipStatus.SUSPENDED) {
-            throw new IllegalStateException("Patron membership is suspended");
-        }
-        if (patron.getMembershipStatus() == MembershipStatus.EXPIRED) {
-            throw new IllegalStateException("Patron membership is expired");
+            return MembershipStatus.SUSPENDED;
+        } else {
+            return MembershipStatus.EXPIRED;
         }
     }
 }

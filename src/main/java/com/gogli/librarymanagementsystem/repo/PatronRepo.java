@@ -17,8 +17,10 @@ public interface PatronRepo extends JpaRepository<Patron, Long> {
     @Query("SELECT p FROM Patron p WHERE p.phoneNumber = :phoneNumber")
     Patron findByPhoneNumber(String phoneNumber);
 
-    @Query("SELECT p FROM Patron p WHERE p.isActive = :isActive")
-    List<Patron> findActivePatrons(boolean isActive);
+    @Query("SELECT p FROM Patron p " +
+            "WHERE p.membershipStatus = " +
+            "com.gogli.librarymanagementsystem.models.MembershipStatus.ACTIVE")
+    List<Patron> findActivePatrons();
 
     List<Patron> findAllPatronByFirstName(String firstName);
     List<Patron> findAllPatronByLastName(String lastName);

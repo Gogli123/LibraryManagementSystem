@@ -2,18 +2,16 @@ package com.gogli.librarymanagementsystem.services;
 
 import com.gogli.librarymanagementsystem.models.Book;
 import com.gogli.librarymanagementsystem.repo.BookRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class LibrarySearchService {
 
     private final BookRepo repo;
-
-    public LibrarySearchService(BookRepo repo){
-        this.repo = repo;
-    }
     
     //search methods
     public List<Book> findBookByTitle(String title){

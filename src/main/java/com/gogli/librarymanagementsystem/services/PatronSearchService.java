@@ -3,20 +3,18 @@ package com.gogli.librarymanagementsystem.services;
 import com.gogli.librarymanagementsystem.models.MembershipStatus;
 import com.gogli.librarymanagementsystem.models.Patron;
 import com.gogli.librarymanagementsystem.repo.PatronRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class PatronSearchService {
 
     public final PatronRepo repo;
-
-    public PatronSearchService(PatronRepo repo) {
-        this.repo = repo;
-    }
-
+    
     //search methods
     public List<Patron> searchByName(String firstName) {
         if (firstName == null || firstName.trim().isEmpty()) {
@@ -54,7 +52,7 @@ public class PatronSearchService {
         return repo.findAllPatronByMembershipStatus(status);
     }
 
-    public List<Patron> filterByActiveStatus(boolean isActive) {
-        return repo.findActivePatrons(isActive);
+    public List<Patron> filterByActiveStatus() {
+        return repo.findActivePatrons();
     }
 }

@@ -1,9 +1,9 @@
 package com.gogli.librarymanagementsystem.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,12 +15,20 @@ public class Patron {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long patronId;
-    
+
+    @NotBlank(message = "First name is required")
     private String firstName;
+    @NotBlank(message = "Last name is required")
     private String lastName;
+    
+    @NotBlank(message = "Email is required")
+    @Email
     private String emailAddress;
+    @NotBlank(message = "Phone number is required")
     private String phoneNumber;
+    
+    @NotNull(message = "Membership status is required")
+    @Enumerated(EnumType.ORDINAL)
     private MembershipStatus membershipStatus;
-    private boolean isActive;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

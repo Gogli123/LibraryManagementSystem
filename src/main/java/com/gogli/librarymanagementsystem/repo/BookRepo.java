@@ -13,6 +13,8 @@ public interface BookRepo extends JpaRepository<Book, Long> {
     List<Book> findAllBookByTitle(String title);
     List<Book> findAllBookByAuthor(String author);
     List<Book> findAllBookByIsbn(String isbn);
+
+    @Query("SELECT b FROM Book b WHERE b.genre = :genre")
     List<Book> filterAllBookByGenre(String genre);
     
     @Query("SELECT b FROM Book b WHERE b.isAvailable = :isAvailable")

@@ -1,27 +1,27 @@
 package com.gogli.librarymanagementsystem.services;
 
 import com.gogli.librarymanagementsystem.Dtos.RegisterDto;
+import com.gogli.librarymanagementsystem.Dtos.UpdatePasswordRequestDto;
 import com.gogli.librarymanagementsystem.exceptions.ResourceNotFoundException;
 import com.gogli.librarymanagementsystem.exceptions.UsernameAlreadyExistsException;
 import com.gogli.librarymanagementsystem.mapper.LibrarianMapper;
 import com.gogli.librarymanagementsystem.models.Librarian;
 import com.gogli.librarymanagementsystem.repo.LibrarianRepo;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 @Service
+@RequiredArgsConstructor
 public class LibrarianService {
 
     private final LibrarianRepo repo;
     private final LibrarianMapper mapper;
-
-    public LibrarianService(LibrarianRepo repo, LibrarianMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(10);
 
@@ -57,38 +57,44 @@ public class LibrarianService {
     @Transactional
     public void updateLibrarian(long librarianId, Librarian updatedLibrarian) {
         Librarian librarian = findLibrarianById(librarianId);
-        String oldUsername = librarian.getUsername();
 
-        if (updatedLibrarian.getFirstName() != null && !updatedLibrarian.getFirstName().trim().isEmpty()) {
-            librarian.setFirstName(updatedLibrarian.getFirstName());
-        }
-        if (updatedLibrarian.getLastName() != null && !updatedLibrarian.getLastName().trim().isEmpty()) {
-            librarian.setLastName(updatedLibrarian.getLastName());
-        }
-        if (updatedLibrarian.getUsername() != null && !updatedLibrarian.getUsername().trim().isEmpty()) {
-            if (oldUsername.equals(updatedLibrarian.getUsername())) {
-                throw new IllegalArgumentException("Can not change to the same Username");
-            } else if (repo.findByUsername(updatedLibrarian.getUsername()) != null) {
-                throw new UsernameAlreadyExistsException("Username already taken");
+        String newFirstName = updatedLibrarian.getFirstName() != null ? updatedLibrarian.getFirstName().trim() : null;
+        String newLastName = updatedLibrarian.getLastName() != null ? updatedLibrarian.getLastName().trim() : null;
+        String newUsername = updatedLibrarian.getUsername() != null ? updatedLibrarian.getUsername().trim() : null;
+        String newEmail = updatedLibrarian.getEmail() != null ? updatedLibrarian.getEmail().trim() : null;
+
+        updateIfPresent(newFirstName, librarian::setFirstName);
+        updateIfPresent(newLastName, librarian::setLastName);
+
+        if (newUsername != null && !newUsername.equals(librarian.getUsername())) {
+            if (repo.findByUsername(newUsername) != null) {
+                throw new UsernameAlreadyExistsException("Username already exists");
             }
-
-            librarian.setUsername(updatedLibrarian.getUsername());
+            librarian.setUsername(newUsername);
         }
-        if (updatedLibrarian.getEmail() != null && !updatedLibrarian.getEmail().trim().isEmpty()) {
-            librarian.setEmail(updatedLibrarian.getEmail());
+
+        if (newEmail != null && !newEmail.equals(librarian.getEmail())) {
+            if (repo.findByEmail(newEmail) != null) {
+                throw new UsernameAlreadyExistsException("Email already exists");
+            }
+            librarian.setEmail(newEmail);
         }
 
         repo.save(librarian);
     }
 
-    public void updateCustomerPassword(long librarianId, String existingPassword, String newPassword) {
+    private <T> void updateIfPresent(T value, Consumer<T> setter) {
+        Optional.ofNullable(value).ifPresent(setter);
+    }
+
+    public void updateLibrarianPassword(long librarianId, UpdatePasswordRequestDto updatePasswordRequestDto) {
         Librarian user = findLibrarianById(librarianId);
 
-        if (!encoder.matches(existingPassword, user.getPassword())) {
+        if (!encoder.matches(updatePasswordRequestDto.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid existing password");
         }
 
-        user.setPassword(encoder.encode(newPassword));
+        user.setPassword(encoder.encode(updatePasswordRequestDto.getNewPassword()));
         repo.save(user);
     }
 
@@ -108,7 +114,7 @@ public class LibrarianService {
             throw new ResourceNotFoundException("No users found");
         }
 
-        allUsers.sort((librarian1, librarian2) -> (int) (librarian1.getLibrarianId() - librarian2.getLibrarianId()));
+        allUsers.sort((librarian1, librarian2) -> (int) (librarian2.getLibrarianId() - librarian1.getLibrarianId()));
         return allUsers;
     }
 
