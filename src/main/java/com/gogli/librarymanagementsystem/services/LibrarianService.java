@@ -33,7 +33,7 @@ public class LibrarianService {
 
         // Check if the username is already taken
         if (repo.findByUsername(registerDto.getUsername()) != null) {
-            throw new UsernameAlreadyExistsException("Username already taken");
+            throw new UsernameAlreadyExistsException("Username is already taken");
         }
 
         if (!registerDto.getPassword().equals(registerDto.getConfirmPassword())) {

@@ -27,21 +27,28 @@ public class SecurityConfig {
     private final MyUserDetailService userDetailsService;
     private final JWTFilter jwtFilter;
     private final CustomLogoutHandler customLogoutHandler;
-    
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/", "/login",
+                                "/css/**", "/js/**", "/error").permitAll()
                         .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/index")
+                        .permitAll())
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout
-                        .logoutUrl("/api/logout")
+                        .logoutUrl("/logout")
                         .addLogoutHandler(customLogoutHandler)
+                        .logoutSuccessUrl("/login")
                         .logoutSuccessHandler(
                                 (req, res, auth)
                                         -> SecurityContextHolder.clearContext())

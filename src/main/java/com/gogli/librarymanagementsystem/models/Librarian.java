@@ -1,7 +1,10 @@
 package com.gogli.librarymanagementsystem.models;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
@@ -9,6 +12,9 @@ import lombok.Data;
         @UniqueConstraint(columnNames = {"username"}),
         @UniqueConstraint(columnNames = {"email"})
 })
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Librarian {
     
     @Id
