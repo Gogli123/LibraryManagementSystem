@@ -11,8 +11,8 @@ import com.gogli.librarymanagementsystem.repo.TransactionsRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -103,28 +103,25 @@ public class TransactionsService {
     public void returnBook(long patronId, long bookId) {
         Book book = bookService.getBookById(bookId);
         List<Transactions> transactions = transactionsRepo.findAllByPatronId(patronId);
-        transactions = transactions.stream().filter(tr -> tr.getReturnedAt() == null).toList();
 
-        for (Transactions item : transactions) {
-            if (item.getPatron().getPatronId() == patronId && item.getBook().getBookId() == bookId
-                    && item.getReturnedAt() == null) {
+        transactions = transactions.stream()
+                .filter(tr -> tr.getReturnedAt() == null)
+                .filter(tr -> tr.getBook().getBookId() == bookId)
+                .toList();
 
-                item.setReturnedAt(LocalDateTime.now());
-                transactionsRepo.save(item);
-                book.setQuantity(book.getQuantity() + 1);
-
-                if (!book.isAvailable()) {
-                    book.setAvailable(true);
-                }
-                bookRepo.save(book);
-
-                return;
-            } else {
-                throw new IllegalArgumentException("Book already returned");
-            }
+        if (transactions.isEmpty()) {
+            throw new IllegalArgumentException("Book already returned or not borrowed by this patron");
         }
 
-        throw new ResourceNotFoundException("No active borrowing transaction found for this patron and book");
+        Transactions activeTransaction = transactions.getFirst();
+        activeTransaction.setReturnedAt(LocalDateTime.now());
+        transactionsRepo.save(activeTransaction);
+        
+        book.setQuantity(book.getQuantity() + 1);
+        if (!book.isAvailable()) {
+            book.setAvailable(true);
+        }
+        bookRepo.save(book);
     }
 
     private void notifyOverduePatrons() {
@@ -146,7 +143,7 @@ public class TransactionsService {
     public ReportData generateReports() {
         List<Transactions> overdueTransactions = transactionsRepo.findOverdueTransactions();
         List<Transactions> allTransactions = getAllTransactions();
-        
+
         Map<Long, List<Transactions>> overdueTransactionsByPatron = allTransactions.stream()
                 .collect(Collectors.groupingBy(t -> t.getPatron().getPatronId()));
 

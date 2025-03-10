@@ -24,17 +24,17 @@ import static org.mockito.Mockito.*;
 public class LibrarianServiceTest {
 
     @Mock
-    LibrarianRepo librarianRepo;
+    private LibrarianRepo librarianRepo;
 
     @Mock
-    LibrarianMapper librarianMapper;
+    private LibrarianMapper librarianMapper;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(10);
 
     private RegisterDto registerDto;
 
     @InjectMocks
-    LibrarianService librarianService;
+    private LibrarianService librarianService;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +49,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void register_UserSuccessfully() {
+    void registerLibrarian_Successfully() {
         Librarian mockLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -70,7 +70,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenEmailIsTaken() {
+    void registerLibrarian_ShouldThrowException_WhenEmailIsTaken() {
         Librarian existingLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -92,7 +92,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenUsernameIsTaken() {
+    void registerLibrarian_ShouldThrowException_WhenUsernameIsTaken() {
         Librarian existingLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -114,7 +114,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenPasswordsDoNotMatch() {
+    void registerLibrarian_ShouldThrowException_WhenPasswordsDoNotMatch() {
         registerDto.setPassword("invalid");
 
         when(librarianRepo.findByEmail(registerDto.getEmail())).thenReturn(null);
@@ -130,7 +130,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void update_librarianInformationSuccessfully() {
+    void updateLibrarianInformation_Successfully() {
         Librarian mockLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -158,7 +158,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void update_librarianPasswordSuccessfully() {
+    void updateLibrarianPassword_Successfully() {
         Librarian mockLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -181,7 +181,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void update_ShouldThrowException_WhenOldPasswordIsInvalid() {
+    void updateLibrarianPassword_ShouldThrowException_WhenOldPasswordIsInvalid() {
         Librarian mockLibrarian = Librarian.builder()
                 .firstName(registerDto.getFirstName())
                 .lastName(registerDto.getLastName())
@@ -207,7 +207,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void set_librarianToInactiveSuccessfully() {
+    void setLibrarianToInactive_Successfully() {
         Librarian mockLibrarian = Librarian.builder()
                 .librarianId(1)
                 .firstName(registerDto.getFirstName())
@@ -227,7 +227,7 @@ public class LibrarianServiceTest {
     }
 
     @Test
-    void set_ShouldThrowException_librarianToInactiveWhenAlreadyInactive() {
+    void setLibrarianToInactive_ShouldThrowException_WhenAlreadyInactive() {
         Librarian mockLibrarian = Librarian.builder()
                 .librarianId(1)
                 .firstName(registerDto.getFirstName())
